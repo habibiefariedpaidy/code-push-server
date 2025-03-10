@@ -26,6 +26,22 @@ export interface AcquisitionConfig {
   redisManager: redis.RedisManager;
 }
 
+function replaceURLOrigin(urlString: string, newOrigin: string): string {
+  try {
+      const url = new URL.URL(urlString); // Parse the URL
+      const newUrl = new URL.URL(newOrigin); // Parse the new origin to extract protocol & hostname
+
+      // Replace origin (protocol + hostname + port)
+      url.protocol = newUrl.protocol;
+      url.hostname = newUrl.hostname;
+      url.port = newUrl.port; // Ensure port is carried over if provided
+
+      return url.toString(); // Return the modified URL
+  } catch {
+      return urlString;
+  }
+}
+
 function getUrlKey(originalUrl: string): string {
   const obj: any = URL.parse(originalUrl, /*parseQueryString*/ true);
   delete obj.query.clientUniqueId;
@@ -179,6 +195,12 @@ export function getAcquisitionRouter(config: AcquisitionConfig): express.Router 
           const updateCheckBody: { updateInfo: UpdateCheckResponse } = {
             updateInfo: giveRolloutPackage ? cachedResponseObject.rolloutPackage : cachedResponseObject.originalPackage,
           };
+
+          if (process.env.EMULATED) {
+            console.log("[DEBUG] BEFORE BLOB_HOST: ",updateCheckBody.updateInfo.downloadURL);
+            updateCheckBody.updateInfo.downloadURL = replaceURLOrigin(updateCheckBody.updateInfo.downloadURL, process.env.BLOB_HOST);
+            console.log("[DEBUG] FINAL BLOB_HOST: ",updateCheckBody.updateInfo);
+          }
 
           // Change in new API
           updateCheckBody.updateInfo.target_binary_range = updateCheckBody.updateInfo.appVersion;
