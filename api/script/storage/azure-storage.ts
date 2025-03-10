@@ -856,10 +856,11 @@ export class AzureStorage implements storage.Storage {
     let blobServiceClient: BlobServiceClient;
 
     if (process.env.EMULATED) {
-      const devConnectionString = "UseDevelopmentStorage=true";
+      const devConnectionString: string = process.env.AZURITE_CONNECTION_STRING?.trim() || "UseDevelopmentStorage=true";
+      console.log("[DEBUG] Dev Connection String:", devConnectionString);
 
-      tableServiceClient = TableServiceClient.fromConnectionString(devConnectionString);
-      tableClient = TableClient.fromConnectionString(devConnectionString, AzureStorage.TABLE_NAME);
+      tableServiceClient = TableServiceClient.fromConnectionString(devConnectionString, {allowInsecureConnection : true});
+      tableClient = TableClient.fromConnectionString(devConnectionString, AzureStorage.TABLE_NAME, {allowInsecureConnection : true});
       blobServiceClient = BlobServiceClient.fromConnectionString(devConnectionString);
     } else {
       if ((!accountName && !process.env.AZURE_STORAGE_ACCOUNT) || (!accountKey && !process.env.AZURE_STORAGE_ACCESS_KEY)) {
